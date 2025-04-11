@@ -3,7 +3,6 @@ package com.example.item_service.controller;
 
 import com.example.item_service.model.Item;
 import com.example.item_service.service.ItemService;
-import jakarta.ws.rs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
