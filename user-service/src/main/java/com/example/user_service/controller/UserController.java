@@ -19,8 +19,16 @@ public class UserController {
     @Autowired
     UserService userService;
 
+    @GetMapping("/test")
+    public String testEndpoint(){
+        return "Test successful!";
+    }
+
     @PostMapping
     public String addUser(@RequestBody User user){
+        if(userService.getUserByEmail(user.getEmail())!=null){
+            return "User with this email already exists, try adding another email";
+        }
         User newUser = userService.addUser(user);
         if(newUser!=null){
             return "User added successfully!";
@@ -31,31 +39,31 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, String>> getUserById(@PathVariable Long id){
         User user = userService.getUserById(id);
-        Map<String,String> response = Map.of("message", "User added successfully!",
-                "userId",  "userId",
-                "username", "username",
-                "email", "email",
-                "role", "role",
-                "token", "token");
-        if(user!=null){
-            return new ResponseEntity<>(response, HttpStatus.OK);
+        if(user==null){
+            return new ResponseEntity<>(Map.of("message", "User not found!"), HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        Map<String,String> response = Map.of("message", "User found!",
+                "userId", String.valueOf(user.getUserId()),
+                "username", user.getUserName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "token", user.getToken());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/{email}")
+    @GetMapping("/email/{email}")
     public ResponseEntity<Map<String, String>> getUserByEmail(@PathVariable String email){
         User user = userService.getUserByEmail(email);
-        Map<String,String> response = Map.of("message", "User added successfully!",
-                "userId",  "userId",
-                "username", "username",
-                "email", "email",
-                "role", "role",
-                "token", "token");
-        if(user!=null){
-            return new ResponseEntity<>(response, HttpStatus.OK);
+        if(user==null){
+            return new ResponseEntity<>(Map.of("message", "User not found!"), HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        Map<String,String> response = Map.of("message", "User found!",
+                "userId", String.valueOf(user.getUserId()),
+                "username", user.getUserName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "token", user.getToken());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")

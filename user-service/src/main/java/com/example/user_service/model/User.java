@@ -1,10 +1,7 @@
 package com.example.user_service.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigInteger;
@@ -23,6 +20,7 @@ public class User {
 
     private String userName;
 
+    @Column(name = "email", unique = true)
     private String email;
 
     private String password;
