@@ -42,7 +42,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item getItemByName(String itemName) {
-        Optional<Item> item = Optional.ofNullable(itemRepository.findByName(itemName));
+        Optional<Item> item = Optional.ofNullable(itemRepository.findByItemName(itemName));
         return item.orElse(null);
     }
 }
