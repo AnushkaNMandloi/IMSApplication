@@ -1,7 +1,9 @@
 package com.example.user_service.controller;
 
 
-import com.example.user_service.model.User;
+import com.example.user_service.feign.ItemFeignClient;
+import com.example.user_service.feign.PurchaseFeignClient;
+import com.example.user_service.model.*;
 import com.example.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,12 @@ public class UserController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    PurchaseFeignClient purchaseFeignClient;
+
+    @Autowired
+    ItemFeignClient itemFeignClient;
 
     @GetMapping("/test")
     public String testEndpoint(){
@@ -74,6 +82,62 @@ public class UserController {
     @GetMapping
     public List<User> getAllUsers(){
         return userService.getAllUsers();
+    }
+
+    @PostMapping("/{id}/purchase")
+    public ResponseEntity<Map<String, String>> purchaseItem(@PathVariable Long id, @RequestBody PurchaseRequestDTO request){
+        //check the user first if it exists or not
+        User user = userService.getUserById(id);
+        if(user==null){
+            return new ResponseEntity<>(Map.of("message", "User not found!"), HttpStatus.NOT_FOUND);
+        }
+
+        //verify item existance
+        ItemDTO item = itemFeignClient.getItemById(request.getItemId());
+        if(item==null){
+            return new ResponseEntity<>(Map.of("message", "Item not found"), HttpStatus.NOT_FOUND);
+        }
+
+        PurchaseDTO purchase = new PurchaseDTO();
+        purchase.setUserId(id);
+        purchase.setItemId(request.getItemId());
+        purchase.setQuantity(request.getQuantity());
+
+        purchaseFeignClient.createPurchase(purchase);
+
+        Map<String,String> response = Map.of("message", "Purchased item",
+                "itemId", String.valueOf(item.getItemId()),
+                "itemName", item.getItemName(),
+                "price", String.valueOf(item.getPrice()),
+                "quantity", String.valueOf(purchase.getQuantity()));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("{id}/purchase")
+    public ResponseEntity<?> getUserPurchases(@PathVariable Long id){
+        //verify user first
+        User user = userService.getUserById(id);
+        if(user==null){
+            return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
+        }
+
+        List<PurchaseDTO> list = purchaseFeignClient.getPurchasesByUserId(id);
+        if(list==null || list.isEmpty()){
+            return new ResponseEntity<>(Map.of("message", "No purchases found"), HttpStatus.NOT_FOUND);
+        }
+
+        List<PurchaseResponseDTO> responseList = list.stream().map(purchase -> {
+            ItemDTO item = itemFeignClient.getItemById(purchase.getItemId());
+            return new PurchaseResponseDTO(
+                    purchase.getPurchaseId(),
+                    item.getItemId(),
+                    item.getItemName(),
+                    item.getPrice(),
+                    purchase.getQuantity()
+            );
+        }).toList();
+
+        return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
 
 }
