@@ -36,17 +36,17 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, String>> getItemById(@PathVariable Long id){
+    public ResponseEntity<Item> getItemById(@PathVariable Long id){
         Item item = itemService.getItemById(id);
         if(item==null){
-            return new ResponseEntity<>(Map.of("message", "Item not found!"), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        Map<String,String> response = Map.of("message", "Item found!",
-                "itemName", item.getItemName(),
-                "price", String.valueOf(item.getPrice()),
-                "description", item.getDescription(),
-                "quantity", String.valueOf(item.getQuantity()));
-        return new ResponseEntity<>(response, HttpStatus.OK);
+//        Map<String,String> response = Map.of("message", "Item found!",
+//                "itemName", item.getItemName(),
+//                "price", String.valueOf(item.getPrice()),
+//                "description", item.getDescription(),
+//                "quantity", String.valueOf(item.getQuantity()));
+        return new ResponseEntity<>(item, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")

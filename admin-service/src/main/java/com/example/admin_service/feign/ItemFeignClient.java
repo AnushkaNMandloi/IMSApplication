@@ -1,15 +1,15 @@
 package com.example.admin_service.feign;
 
-import com.example.admin_service.model.UserDTO;
+import com.example.admin_service.model.ItemDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 
-@FeignClient(name = "user-service")
-public interface UserFeignClient {
+@FeignClient(name = "item-service")
+public interface ItemFeignClient {
 
-    @GetMapping("/user")
-    List<UserDTO> getAllUsers();
+    @GetMapping("/item")
+    List<ItemDTO> getAllItems();
 
 }
