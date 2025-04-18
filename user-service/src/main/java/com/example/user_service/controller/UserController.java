@@ -84,6 +84,15 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+    @GetMapping("/items")
+    public ResponseEntity<?> getAllItems(){
+        List<ItemDTO> list = itemFeignClient.getAllItems();
+        if(list==null || list.isEmpty()){
+            return new ResponseEntity<>("There are no items to display", HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
     @PostMapping("/{id}/purchase")
     public ResponseEntity<Map<String, String>> purchaseItem(@PathVariable Long id, @RequestBody PurchaseRequestDTO request){
         //check the user first if it exists or not
