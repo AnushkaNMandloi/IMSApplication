@@ -41,11 +41,6 @@ public class ItemController {
         if(item==null){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-//        Map<String,String> response = Map.of("message", "Item found!",
-//                "itemName", item.getItemName(),
-//                "price", String.valueOf(item.getPrice()),
-//                "description", item.getDescription(),
-//                "quantity", String.valueOf(item.getQuantity()));
         return new ResponseEntity<>(item, HttpStatus.OK);
     }
 
