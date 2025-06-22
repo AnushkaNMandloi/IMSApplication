@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserByEmail(String email) {
-        Optional<User> user = Optional.ofNullable(userRepository.findByEmail(email));
+        Optional<User> user = userRepository.findByEmail(email);
         return user.orElse(null);
     }
 
