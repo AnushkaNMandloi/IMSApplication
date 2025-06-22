@@ -55,7 +55,7 @@ public class UserController {
                 "username", user.getUserName(),
                 "email", user.getEmail(),
                 "role", user.getRole(),
-                "token", user.getToken());
+                "emailVerified", String.valueOf(user.getEmailVerified()));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -70,7 +70,7 @@ public class UserController {
                 "username", user.getUserName(),
                 "email", user.getEmail(),
                 "role", user.getRole(),
-                "token", user.getToken());
+                "emailVerified", String.valueOf(user.getEmailVerified()));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

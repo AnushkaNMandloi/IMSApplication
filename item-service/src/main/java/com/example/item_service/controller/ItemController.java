@@ -54,5 +54,4 @@ public class ItemController {
         return itemService.getAllItems();
     }
 
-
 }
