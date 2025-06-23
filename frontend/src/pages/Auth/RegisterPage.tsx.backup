@@ -1,0 +1,643 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Link,
+  Alert,
+  InputAdornment,
+  IconButton,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Grid,
+  Container,
+  Stepper,
+  Step,
+  StepLabel,
+  LinearProgress,
+  Divider,
+} from '@mui/material';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  Person,
+  Business,
+  Phone,
+  LocationOn,
+  ArrowBack,
+  ArrowForward,
+  CheckCircle,
+} from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { RegisterRequest } from '../../types';
+import { toast } from 'react-toastify';
+import { apiService } from '../../services/api';
+
+// Create api service instance
+const api = new (apiService as any)();
+
+const schema = yup.object({
+  username: yup
+    .string()
+    .required('Username is required')
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username must be less than 20 characters'),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      'Password must contain uppercase, lowercase, number and special character'
+    ),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm your password')
+    .oneOf([yup.ref('password')], 'Passwords must match'),
+  role: yup.string().required('Please select your role'),
+  firstName: yup.string().optional(),
+  lastName: yup.string().optional(),
+  phoneNumber: yup
+    .string()
+    .optional()
+    .matches(/^[+]?[\s./0-9]*[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/, 'Please enter a valid phone number'),
+  businessName: yup.string().when('role', {
+    is: 'SELLER',
+    then: (schema) => schema.required('Business name is required for sellers'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  businessType: yup.string().when('role', {
+    is: 'SELLER',
+    then: (schema) => schema.required('Business type is required for sellers'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  businessAddress: yup.string().when('role', {
+    is: 'SELLER',
+    then: (schema) => schema.required('Business address is required for sellers'),
+    otherwise: (schema) => schema.optional(),
+  }),
+});
+
+const steps = ['Account Details', 'Personal Information', 'Business Details'];
+
+interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  role: 'USER' | 'SELLER';
+  businessName?: string;
+  businessAddress?: string;
+  businessType?: string;
+}
+
+const RegisterPage: React.FC = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+    trigger,
+    getValues,
+  } = useForm<RegisterRequest>({
+    resolver: yupResolver(
+      activeStep === 0 ? schema :
+      activeStep === 1 ? schema :
+      schema
+    ),
+    mode: 'onChange',
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: 'USER',
+      firstName: '',
+      lastName: '',
+      phoneNumber: '',
+      businessName: '',
+      businessType: '',
+      businessAddress: '',
+    },
+  });
+
+  const selectedRole = watch('role');
+
+  const onSubmit = async (data: RegisterRequest) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await api.register(data);
+      toast.success('Registration successful! Please check your email to verify your account.');
+      navigate('/login', { 
+        state: { 
+          message: 'Registration successful! Please verify your email before logging in.' 
+        }
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    const isStepValid = await trigger();
+    if (isStepValid) {
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Controller
+                name="username"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Username"
+                    variant="outlined"
+                    error={!!errors.username}
+                    helperText={errors.username?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Person color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Email Address"
+                    type="email"
+                    variant="outlined"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    variant="outlined"
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="confirmPassword"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Confirm Password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    variant="outlined"
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            edge="end"
+                          >
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <FormControl component="fieldset" error={!!errors.role}>
+                    <FormLabel component="legend">I want to:</FormLabel>
+                    <RadioGroup {...field} row>
+                      <FormControlLabel
+                        value="USER"
+                        control={<Radio />}
+                        label="Shop as a Customer"
+                      />
+                      <FormControlLabel
+                        value="SELLER"
+                        control={<Radio />}
+                        label="Sell Products"
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+          </Grid>
+        );
+
+      case 1:
+        return (
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="firstName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="First Name"
+                    variant="outlined"
+                    error={!!errors.firstName}
+                    helperText={errors.firstName?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="lastName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Last Name"
+                    variant="outlined"
+                    error={!!errors.lastName}
+                    helperText={errors.lastName?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Phone Number (Optional)"
+                    variant="outlined"
+                    error={!!errors.phoneNumber}
+                    helperText={errors.phoneNumber?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Phone color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+          </Grid>
+        );
+
+      case 2:
+        if (selectedRole !== 'SELLER') {
+          return (
+            <Box textAlign="center" py={4}>
+              <CheckCircle color="success" sx={{ fontSize: 64, mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Account Setup Complete
+              </Typography>
+              <Typography color="text.secondary">
+                As a customer, you're ready to start shopping!
+              </Typography>
+            </Box>
+          );
+        }
+
+        return (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Controller
+                name="businessName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Business Name"
+                    variant="outlined"
+                    error={!!errors.businessName}
+                    helperText={errors.businessName?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Business color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="businessType"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Business Type"
+                    variant="outlined"
+                    placeholder="e.g., Electronics, Fashion, Books"
+                    error={!!errors.businessType}
+                    helperText={errors.businessType?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="businessAddress"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Business Address"
+                    variant="outlined"
+                    multiline
+                    rows={3}
+                    error={!!errors.businessAddress}
+                    helperText={errors.businessAddress?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocationOn color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="businessPhone"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Business Phone"
+                    variant="outlined"
+                    error={!!errors.businessPhone}
+                    helperText={errors.businessPhone?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Phone color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+          </Grid>
+        );
+
+      case 3:
+        return (
+          <Box textAlign="center" py={4}>
+            <CheckCircle color="success" sx={{ fontSize: 64, mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Registration Complete!
+            </Typography>
+            <Typography color="text.secondary" paragraph>
+              {selectedRole === 'SELLER' 
+                ? 'Your seller account will be reviewed and verified within 24-48 hours.'
+                : 'Your account has been created successfully.'
+              }
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Please check your email for verification instructions.
+            </Typography>
+          </Box>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const maxSteps = selectedRole === 'SELLER' ? 3 : 2;
+
+  return (
+    <Container component="main" maxWidth="md">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          py: 4,
+        }}
+      >
+        <Paper
+          elevation={8}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+          }}
+        >
+          {/* Header */}
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+              Create Your Account
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Join thousands of users and sellers on our platform
+            </Typography>
+          </Box>
+
+          {/* Stepper */}
+          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+            {steps.slice(0, maxSteps).map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Form */}
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+            {renderStepContent(activeStep)}
+
+            {/* Navigation Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+              <Button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                variant="outlined"
+                sx={{ borderRadius: 2 }}
+              >
+                Back
+              </Button>
+
+              {activeStep === maxSteps - 1 ? (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isLoading}
+                  sx={{
+                    borderRadius: 2,
+                    px: 4,
+                    textTransform: 'none',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  variant="contained"
+                  sx={{ borderRadius: 2 }}
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
+          </Box>
+
+          {/* Login Link */}
+          <Box sx={{ textAlign: 'center', mt: 3 }}>
+            <Typography variant="body2">
+              Already have an account?{' '}
+              <Link
+                component={RouterLink}
+                to="/login"
+                sx={{
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  color: 'primary.main',
+                }}
+              >
+                Sign in here
+              </Link>
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
+  );
+};
+
+export default RegisterPage; 

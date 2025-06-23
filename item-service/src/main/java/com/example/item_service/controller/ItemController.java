@@ -70,8 +70,9 @@ public class ItemController {
         try {
             Item item = itemService.getItemById(id);
             if(item == null){
-                return ResponseEntity.notFound()
-                        .body(Map.of("error", "Item not found", "available", false));
+                Map<String, Object> errorResponse = Map.of("error", "Item not found", "available", false);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(errorResponse);
             }
             
             boolean isAvailable = item.getQuantity() != null && item.getQuantity() > 0;
@@ -96,8 +97,9 @@ public class ItemController {
         try {
             Item item = itemService.getItemById(id);
             if(item == null){
-                return ResponseEntity.notFound()
-                        .body(Map.of("error", "Item not found", "reserved", false));
+                Map<String, Object> errorResponse = Map.of("error", "Item not found", "reserved", false);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(errorResponse);
             }
             
             if(item.getQuantity() == null || item.getQuantity() < quantity) {
@@ -126,8 +128,9 @@ public class ItemController {
         try {
             Item item = itemService.getItemById(id);
             if(item == null){
-                return ResponseEntity.notFound()
-                        .body(Map.of("error", "Item not found", "released", false));
+                Map<String, Object> errorResponse = Map.of("error", "Item not found", "released", false);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(errorResponse);
             }
             
             // Release the quantity (increase available stock)
