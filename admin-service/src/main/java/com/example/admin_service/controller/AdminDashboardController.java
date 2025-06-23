@@ -455,4 +455,6 @@ public class AdminDashboardController {
         private String severity;
         private String message;
         private Boolean resolved;
- 
+        private LocalDateTime timestamp;
+    }
+} 

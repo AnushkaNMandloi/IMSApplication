@@ -52,8 +52,8 @@ public class UserProfileResponse {
 
     public UserProfileResponse(UserProfile profile) {
         this.id = profile.getId();
-        this.userId = profile.getUser().getId();
-        this.username = profile.getUser().getUsername();
+        this.userId = profile.getUser().getUserId();
+        this.username = profile.getUser().getUserName();
         this.email = profile.getUser().getEmail();
         this.firstName = profile.getFirstName();
         this.lastName = profile.getLastName();

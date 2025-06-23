@@ -75,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
             order.setDiscountAmount(request.getDiscountAmount());
 
             // Convert cart items to order items
+            final Order finalOrder = order; // Make order effectively final for lambda
             List<OrderItem> orderItems = cart.getItems().stream()
                     .map(cartItem -> {
                         OrderItem orderItem = new OrderItem();
@@ -89,10 +90,14 @@ public class OrderServiceImpl implements OrderService {
                         orderItem.setCategory(cartItem.getCategory());
                         orderItem.setProductAttributes(cartItem.getProductAttributes());
                         orderItem.calculateSubtotal();
-                        order.addOrderItem(orderItem);
                         return orderItem;
                     })
                     .collect(Collectors.toList());
+
+            // Add all order items to the order
+            for (OrderItem orderItem : orderItems) {
+                order.addOrderItem(orderItem);
+            }
 
             // Calculate totals
             order.calculateTotalAmount();
